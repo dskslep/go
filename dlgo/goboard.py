@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from dlgo.gotypes import Player
+from dlgo import zobrist
 
 
 class Move:
@@ -27,14 +28,14 @@ class Move:
 class GoString:
     def __init__(self, color, stones, liberties):
         self.color = color
-        self.stones = set(stones)
-        self.liberties = set(liberties)
+        self.stones = frozenset(stones)
+        self.liberties = frozenset(liberties)
 
-    def remove_liberty(self, point):
-        self.liberties.remove(point)
+    def without_liberty(self, point):
+        return GoString(self.color, self.stones, self.liberties - {point})
 
     def add_liberty(self, point):
-        self.liberties.add(point)
+        return GoString(self.color, self.stones, self.liberties | {point})
 
     def merged_with(self, go_string):
         assert self.color == go_string.color
@@ -58,10 +59,14 @@ class Board:
         self.num_rows = num_rows
         self.num_cols = num_cols
         self._grid = {}
+        self._hash = zobrist.EMPTY_BOARD
+
+    def zobrist_hash(self):
+        return self._hash
 
     def is_on_grid(self, point):
         return 1 <= point.row <= self.num_rows \
-            and 1 <= point.col <= self.num_cols
+               and 1 <= point.col <= self.num_cols
 
     def get(self, point):
         string = self._grid.get(point)
@@ -74,6 +79,10 @@ class Board:
         string = self._grid.get(point)
         return string
 
+    def _replace_string(self, new_string):
+        for point in new_string.stones:
+            self._grid[point] = new_string
+
     def _remove_string(self, go_string):
         for point in go_string.stones:
             for neighbor in point.neighbors():
@@ -81,8 +90,9 @@ class Board:
                     continue
                 neighbor_string = self.get_go_string(neighbor)
                 if neighbor_string is not None and neighbor_string.color == go_string.color.other:
-                    neighbor_string.add_liberty(point)
+                    self._replace_string(neighbor_string.with_liberty(point))
             self._grid[point] = None
+            self._hash ^= zobrist.HASH_CODE[point, go_string.color]
 
     def place_stone(self, player, point):
         assert self.is_on_grid(point)
@@ -114,9 +124,11 @@ class Board:
         for new_string_point in new_string.stones:
             self._grid[new_string_point] = new_string
 
+        self._hash ^= zobrist.HASH_CODE[point, player]
+
         for opposite_color_string in adjacent_opposite_color:
-            opposite_color_string.remove_liberty(point)
-            if opposite_color_string.num_liberties == 0:
+            replacement = opposite_color_string.without_liberty(point)
+            if replacement.num_liberties == 0:
                 self._remove_string(opposite_color_string)
 
 
@@ -126,6 +138,14 @@ class GameState:
         self.next_player = next_player
         self.previous_state = previous_state
         self.last_move = last_move
+
+        if self.previous_state is None:
+            self.previous_states = frozenset()
+        else:
+            self.previous_states = frozenset(
+                previous_state.previous_states
+                | {previous_state.next_player, previous_state.board.zobrist_hash()}
+            )
 
     def apply_move(self, move):
         next_board = deepcopy(self.board)
@@ -171,12 +191,7 @@ class GameState:
         next_board = deepcopy(self.board)
         next_board.place_stone(player, move.point)
         next_situation = (player.other, next_board)
-        past_state = self.previous_state
-        while past_state is not None:
-            if past_state.situation == next_situation:
-                return True
-            past_state = past_state.previous_state
-        return False
+        return next_situation in self.previous_states
 
     def is_valid_move(self, move):
         if self.is_over():
@@ -186,14 +201,6 @@ class GameState:
             return True
 
         return self.board.get(move.point) is None \
-            and self.board.is_on_grid(move.point) \
-            and not self.is_move_self_capture(self.next_player, move) \
-            and not self.does_move_violate_ko(self.next_player, move)
-
-
-
-
-
-
-
-
+               and self.board.is_on_grid(move.point) \
+               and not self.is_move_self_capture(self.next_player, move) \
+               and not self.does_move_violate_ko(self.next_player, move)

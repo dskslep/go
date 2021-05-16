@@ -6,12 +6,10 @@ def is_point_an_eye(board, point, color):
         return False
 
     for neighbor in point.neighbors():
-        if not board.is_on_grid(neighbor):
-            continue
-
-        neighbor_color = board.get(neighbor)
-        if neighbor_color != color:
-            return False
+        if board.is_on_grid(neighbor):
+            neighbor_color = board.get(neighbor)
+            if neighbor_color != color:
+                return False
 
     friendly_corners = 0
     off_board_corners = 0
@@ -30,7 +28,7 @@ def is_point_an_eye(board, point, color):
             corner_color = board.get(corner)
             if corner_color == color:
                 friendly_corners += 1
-        if off_board_corners > 0:
-            return off_board_corners + friendly_corners == 4
+    if off_board_corners > 0:
+        return off_board_corners + friendly_corners == 4
 
-        return friendly_corners >= 3
+    return friendly_corners >= 3

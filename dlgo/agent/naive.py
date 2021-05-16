@@ -6,7 +6,7 @@ from dlgo.goboard_slow import Move
 from dlgo.gotypes import Point
 
 
-class RandomAgent(Agent):
+class RandomBot(Agent):
     def select_move(self, game_state):
         candidates = []
         for r in range(1, game_state.board.num_rows + 1):
@@ -17,4 +17,6 @@ class RandomAgent(Agent):
                     candidates.append(candidate)
         if not candidates:
             return Move.pass_turn()
+
+
         return Move.play(random.choice(candidates))
