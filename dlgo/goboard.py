@@ -34,7 +34,7 @@ class GoString:
     def without_liberty(self, point):
         return GoString(self.color, self.stones, self.liberties - {point})
 
-    def add_liberty(self, point):
+    def with_liberty(self, point):
         return GoString(self.color, self.stones, self.liberties | {point})
 
     def merged_with(self, go_string):
@@ -125,9 +125,10 @@ class Board:
             self._grid[new_string_point] = new_string
 
         self._hash ^= zobrist.HASH_CODE[point, player]
-
         for opposite_color_string in adjacent_opposite_color:
             replacement = opposite_color_string.without_liberty(point)
+            for opposite_point in replacement.stones:
+                self._grid[opposite_point] = replacement
             if replacement.num_liberties == 0:
                 self._remove_string(opposite_color_string)
 

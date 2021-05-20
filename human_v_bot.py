@@ -1,6 +1,6 @@
 from dlgo.agent.helpers import is_point_an_eye
 from dlgo.agent.naive import RandomBot
-from dlgo.goboard_slow import GameState, Move
+from dlgo.goboard import GameState, Move
 from dlgo.gotypes import Player
 from dlgo.utils import print_board, print_move, point_from_coords
 
@@ -17,6 +17,7 @@ def main():
             valid = False
             while not valid:
                 human_move = input('-- ')
+                human_move = human_move.upper()
                 point = point_from_coords(human_move.strip())
                 move = Move.play(point)
                 valid = game.is_valid_move(move)

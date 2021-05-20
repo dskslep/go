@@ -1,4 +1,5 @@
 from dlgo.gotypes import Point
+from dlgo.goboard import Move
 
 
 def is_point_an_eye(board, point, color):
@@ -32,3 +33,14 @@ def is_point_an_eye(board, point, color):
         return off_board_corners + friendly_corners == 4
 
     return friendly_corners >= 3
+
+
+def legal_moves(state):
+    candidates = []
+    for r in range(1, state.board.num_rows + 1):
+        for c in range(1, state.board.num_cols + 1):
+            candidate = Move.play(Point(row=r, col=c))
+            if state.is_valid_move(candidate) \
+                    and not is_point_an_eye(state.board, candidate.point, state.next_player):
+                candidates.append(candidate)
+    return candidates

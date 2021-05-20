@@ -33,3 +33,17 @@ def point_from_coords(coords):
     col = COLS.index(coords[0]) + 1
     row = int(coords[1:])
     return Point(row, col)
+
+
+def capture_diff(state):
+    stones = {
+        Player.black: 0,
+        Player.white: 0
+    }
+
+    for r in range(1, state.board.num_rows + 1):
+        for c in range(1, state.board.num_cols + 1):
+            color = state.board.get(Point(r, c))
+            if color is not None:
+                stones[color] += 1
+    return stones[state.next_player] - stones[state.next_player.other]
