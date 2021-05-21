@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from dlgo.gotypes import Player
 from dlgo import zobrist
+from dlgo.utils import capture_diff
 
 
 class Move:
@@ -145,7 +146,7 @@ class GameState:
         else:
             self.previous_states = frozenset(
                 previous_state.previous_states
-                | {previous_state.next_player, previous_state.board.zobrist_hash()}
+                | {(previous_state.next_player, previous_state.board.zobrist_hash())}
             )
 
     def apply_move(self, move):
@@ -184,14 +185,14 @@ class GameState:
 
     @property
     def situation(self):
-        return self.next_player, self.board
+        return self.next_player, self.board.zobrist_hash()
 
     def does_move_violate_ko(self, player, move):
         if not move.is_play:
             return False
         next_board = deepcopy(self.board)
         next_board.place_stone(player, move.point)
-        next_situation = (player.other, next_board)
+        next_situation = (player.other, next_board.zobrist_hash())
         return next_situation in self.previous_states
 
     def is_valid_move(self, move):
@@ -205,3 +206,9 @@ class GameState:
                and self.board.is_on_grid(move.point) \
                and not self.is_move_self_capture(self.next_player, move) \
                and not self.does_move_violate_ko(self.next_player, move)
+
+    def winner(self):
+        if capture_diff(self) > 0:
+            return self.next_player
+        else:
+            return self.next_player.other

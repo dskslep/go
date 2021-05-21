@@ -29,7 +29,7 @@ def best_result(state, depth, eval_fn):
         return best_so_far
 
 
-def alpha_beta_best(state, our_best, depth, eval_fn):
+def alpha_beta_best(state, alpha, depth, eval_fn):
     if state.is_over():
         if state.winner() == state.next_player:
             return MAX_SCORE
@@ -41,15 +41,13 @@ def alpha_beta_best(state, our_best, depth, eval_fn):
         best_so_far = -MAX_SCORE
         for move in legal_moves(state):
             next_state = state.apply_move(move)
-            opposite_result = alpha_beta_best(next_state, -our_best, depth - 1, eval_fn)
+            opposite_result = alpha_beta_best(next_state, best_so_far, depth - 1, eval_fn)
+            if opposite_result < alpha:
+                return opposite_result
             our_result = - opposite_result
-            if our_result > our_best:
-                return best_so_far
 
             if our_result > best_so_far:
                 best_so_far = our_result
-            if best_so_far > our_best:
-                return best_so_far
 
         return best_so_far
 
@@ -66,6 +64,8 @@ class MinimaxBot(Agent):
         for move in legal_moves(game_state):
             next_state = game_state.apply_move(move)
             opponent_best = alpha_beta_best(next_state, best_so_far, self.max_depth, self.eval_fn)
+            # opponent_best = best_result(next_state, self.max_depth, self.eval_fn)
+
             our_result = -opponent_best
             if our_result > best_so_far:
                 best_moves = [move]

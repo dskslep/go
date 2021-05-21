@@ -1,14 +1,15 @@
 from dlgo.agent.helpers import is_point_an_eye
+from dlgo.agent.minimax import MinimaxBot
 from dlgo.agent.naive import RandomBot
 from dlgo.goboard import GameState, Move
 from dlgo.gotypes import Player
-from dlgo.utils import print_board, print_move, point_from_coords
+from dlgo.utils import print_board, print_move, point_from_coords, capture_diff
 
 
 def main():
     board_size = 4
     game = GameState.new_game(board_size)
-    bot = RandomBot()
+    bot = MinimaxBot(5, capture_diff)
     while not game.is_over():
         print(chr(27) + "[2J")
         print_board(game.board)
