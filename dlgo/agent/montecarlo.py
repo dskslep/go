@@ -2,10 +2,11 @@ import random
 
 from dlgo.agent.base import Agent
 from dlgo.agent.naive import RandomBot
-from dlgo.goboard import Move
+from dlgo.goboard_fast import Move
 from dlgo.agent.helpers import legal_moves
 from dlgo.gotypes import Player
 from dlgo.utils import print_board
+from copy import deepcopy
 
 
 class MCNode:
@@ -60,11 +61,21 @@ class MCBot(Agent):
     def __init__(self, num_rounds):
         super().__init__()
         self.num_rounds = num_rounds
+        self.root = None
 
     def select_move(self, game_state):
-        root = MCNode(game_state)
+        if not self.root:
+            self.root = MCNode(game_state)
+        else:
+            children = [c for c in self.root.children if c == game_state]
+            if children:
+                self.root = children[0]
+                self.root.parent = None
+            else:
+                self.root = MCNode(game_state)
+        # self.root = MCNode(game_state)
         for i in range(self.num_rounds):
-            node = root
+            node = self.root
             while (not node.can_add_child()) and (not node.is_terminal()):
                 node = node.select_child()
 
@@ -76,12 +87,15 @@ class MCBot(Agent):
                 node.record_win(winner)
                 node = node.parent
 
-        best_move = None
+        best_child = None
         best_pct = -1
-        for child in root.children:
+        for child in self.root.children:
             child_pct = child.winning_frac(game_state.next_player)
             if child_pct > best_pct:
                 best_pct = child_pct
-                best_move = child.move
+                best_child = child
+
+        best_move = best_child.move
+        self.root = best_child
 
         return best_move

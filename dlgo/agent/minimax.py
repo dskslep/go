@@ -1,7 +1,7 @@
 import random
 
 from dlgo.agent.base import Agent
-from dlgo.goboard import Move
+from dlgo.goboard_fast import Move
 from dlgo.agent.helpers import legal_moves
 MAX_SCORE = 1000
 
